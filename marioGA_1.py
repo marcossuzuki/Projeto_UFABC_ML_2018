@@ -26,16 +26,14 @@ def getReward(reward, gameOver, action, dx):
   
   # +0.5 for stomping enemies or getting itens/coins
   if reward > 0 and not gameOver:
-    R += 0.3*np.log(reward)
+    R += 3.0*np.log(reward)
  
   # incentiva andar pra direita
   if (dx>0):
     R += 0.5
   # e pular correndo
-  if action == 384 or action ==386:
-      R += 2
-  if (action == 129 or action == 131 or action == 130):
-    R += 1.0
+  if (action == 129 or action == 131 or action == 384 or action == 386):
+    R += 0.1
 
   if gameOver:
     R  -= 5.0
@@ -222,8 +220,17 @@ def crossover(pop, mother, father):
         #print(point)
         w_mother = population[mother].get_weights()
         w_father = population[father].get_weights()
+        if point == 0:
+            for _ in range(150):
+                inside_point = random.choice(range(170))
 
-        if point==0 or point==2 or point==4:
+                w_new_mother = w_mother[point][inside_point]
+                w_new_father = w_father[point][inside_point]
+
+                w_mother[point][inside_point] = w_new_father
+                w_father[point][inside_point] = w_new_mother
+
+        if point==2 or point==4:
             inside_point = random.sample([0,1,2,3], 1)
             inside_point = inside_point[0]
 
@@ -334,7 +341,7 @@ def main():
     state_size = (radius*2+1)*(radius*2+1)+2
     action_size = len(actions_list)
 
-    initial_population = population(8, state_size, action_size)
+    initial_population = population(20, state_size, action_size)
     '''
     for i in range(4):
         agent = initial_population[i][1]
@@ -353,7 +360,7 @@ def main():
     print("-------------------------------------------------------------------------------")
     print("-------------------------------------------------------------------------------")
     '''
-    evolved = generations(initial_population, 11)
+    evolved = generations(initial_population, 50)
 #[(189.5894952099644, <__main__.DQNAgent object at 0x7ffb881eeb38>), (175.0894952099644, <__main__.DQNAgent object at 0x7ffbe7a2ddd8>), (167.5894952099644, <__main__.DQNAgent object at 0x7ffb98244c18>), (167.0894952099644, <__main__.DQNAgent object at 0x7ffb981160f0>)]
 
     #save_model(evolved)
@@ -373,14 +380,13 @@ def save_model(population):
 if __name__ == "__main__":
     print(main())
 
-    """state_size = (radius*2+1)*(radius*2+1)+2
+    """"state_size = (radius*2+1)*(radius*2+1)+2
     action_size = len(actions_list)
 
-    init_pop = population(1,state_size, action_size)
-    model = init_pop[0][1]
-    print(init_pop[0][1])
+    model = DQNAgent(state_size, action_size)
+    model.load("./save/marioGA_1.gen_10ind0")
 
-    for _ in range(5):
+    for _ in range(2):
         fit = fitness(model)
         print(fit)"""
 
