@@ -18,7 +18,8 @@ from rominfo import *
 from utils import *
 radius = 6
 
-#gameState
+rle = 0
+
 
 def getReward(reward, gameOver, action, dx):
   R = 0 
@@ -150,12 +151,25 @@ def population(size_population, state_size, action_size):
         pop.append((fit,agent))
     return pop
 
+def inciarEmulador():
+    global rle
+    if rle == 0:
+        rle = loadInterface(False)
+        getState(rle.getRAM(), radius)
+        rle.saveState()
+    else:
+        rle.loadState()
+        rle.saveState()
+    
+
+
 def fitness(agent_):
-    rle = loadInterface(True)
+    global rle
+    inciarEmulador()
 
     total_reward, total_my_reward = 0, 0
     state, x, y = getState(rle.getRAM(), radius)
-  
+
     state_size = (radius*2+1)*(radius*2+1)+2
     action_size = len(actions_list)
 
@@ -196,6 +210,7 @@ def fitness(agent_):
                 
         next_state = next_state.split(',')
         next_state = np.reshape(np.array(next_state), [1, state_size])
+    print("score: {}, x = {}".format(total_my_reward, x))
     return total_my_reward
 
 def crossover(pop, mother, father):
@@ -320,6 +335,7 @@ def main():
     action_size = len(actions_list)
 
     initial_population = population(8, state_size, action_size)
+    '''
     for i in range(4):
         agent = initial_population[i][1]
         agent.load("./save/marioGA_1.gen_4ind" +str(i))
@@ -336,6 +352,7 @@ def main():
     print("-------------------------------------------------------------------------------")
     print("-------------------------------------------------------------------------------")
     print("-------------------------------------------------------------------------------")
+    '''
     evolved = generations(initial_population, 11)
 #[(189.5894952099644, <__main__.DQNAgent object at 0x7ffb881eeb38>), (175.0894952099644, <__main__.DQNAgent object at 0x7ffbe7a2ddd8>), (167.5894952099644, <__main__.DQNAgent object at 0x7ffb98244c18>), (167.0894952099644, <__main__.DQNAgent object at 0x7ffb981160f0>)]
 
