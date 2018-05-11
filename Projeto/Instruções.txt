@@ -1,0 +1,17 @@
+Precisa do módulo Keras instalado e suas dependências, Tensorflow, Theano, etc.
+Necessita do Python 3.6
+
+Para rodar o automato digitar:
+
+python3 marioGA_play.py marioGA_4.ind0
+
+
+O jogo será executado diversas vezes após o game over.
+
+
+Grupo:
+
+Marcos Seiti Suzuki     RA: 11121816
+Victor de Oliveira      RA: 11095612
+Lucca Diego Prado       RA: 11027416
+Wesley Soares de Abreu  RA: 21047216
