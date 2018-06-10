@@ -5,9 +5,9 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation, Input
 from keras.optimizers import Adam
 from keras import backend as K
-from keras.models import load_model
 
 import sys
+import os
 from rle_python_interface.rle_python_interface import RLEInterface
 
 import time
@@ -15,9 +15,9 @@ from rominfo import *
 from utils import *
 radius = 6
 
-rle = 0
 state_size = 1 #(radius*2+1)*(radius*2+1)+2
 action_size = len(actions_list)
+
 
 def getReward(reward, gameOver, action, dx):
   R = 0 
@@ -80,26 +80,39 @@ class NeuralNetwork:
 
     def save(self, name):
         self.model.save_weights(name)
-    
+
+rle = rle = RLEInterface()
+rle.setInt(b'random_seed', 12)
+rle.setBool(b'sound', False)
+rle.setBool(b'display_screen', True)
+
+_ = NeuralNetwork(state_size, action_size)
+
+textTerminal = []
+
+def printInfos(text):
+    _ = os.system("clear")
+    for element in text:
+        print(element)
+
 def population(size_population, state_size, action_size):
     ' Define uma populacao inicial de redes neurais, dado o tamanho de entrada size'
     pop = []
+    textTerminal.append("Initial population")
     for i in range(size_population):
+        textTerminal.append("Individual {}".format(i))
         agent = NeuralNetwork(state_size, action_size)
         fit, x = fitness(agent)
-        
         pop.append((fit,agent,x))
+        textTerminal[len(textTerminal)-1] += " ( x: {}, score: {} )".format(x, fit)
+        printInfos(textTerminal)
+    textTerminal.clear()
     return pop
 
 def startEmulator():
     global rle
-    if rle == 0:
-        rle = loadInterface(True)
-    else:
-        rle.loadROM('super_mario_world.smc', 'snes')
-    
-    getState(rle.getRAM(), radius)
-    _=os.system("clear")
+    rle.loadROM('super_mario_world.smc', 'snes')
+    printInfos(textTerminal)
 
 def fitness(agent_):
     startEmulator()
@@ -120,12 +133,14 @@ def fitness(agent_):
         action = actions_list[a]
                 
         reward = performAction(action, rle)
-                
+
         next_state, xn, yn = getState(rle.getRAM(), radius)
                 
         # contabiliza os ganhos
         R = getReward(reward, rle.game_over(), action, xn-x)
         dx=xn-x
+
+        #verifica se o mario está parado em um mesmo ponto
         if dx == 0:
             count+=1
 
@@ -134,7 +149,7 @@ def fitness(agent_):
         total_reward += reward
         total_my_reward += R #+ reward
                 
-    print("score: {}, x = {}".format(total_my_reward, x))
+    #print("score: {}, x = {}".format(total_my_reward, x))
     return total_my_reward, x
 
 def crossover(pop, mother, father):
@@ -170,9 +185,7 @@ def crossover(pop, mother, father):
     return np.asarray([w_mother, w_father])
 
 def evolve(population, retain_lenght=0.4, random_select=0.1, max_pop=50, number_gen=1):
-    " Evolui a populacao e retorna uma nova geracao"
-
-    new_weights = []
+    ''' Evolui a populacao e retorna uma nova geracao'''
 
     graded = population
     # Aplica o sort baseado nos scores
@@ -187,7 +200,7 @@ def evolve(population, retain_lenght=0.4, random_select=0.1, max_pop=50, number_
         element.save("marioGA.ind"+str(i))
     
     for i in (range(len(parents))):
-        print(parents[i])
+        textTerminal.append("Parent {} ( x: {}, score: {})".format(i, parents[i][2], parents[i][0]))
 
     parents_length = len(parents)
     desired_length = max_pop - parents_length
@@ -196,8 +209,10 @@ def evolve(population, retain_lenght=0.4, random_select=0.1, max_pop=50, number_
     # Mantem alguns dos individuos de forma aleatoria
     if random_select > random.random():
         individual = NeuralNetwork(state_size, action_size)
+        textTerminal.append("Random individual")
         fit_individual = fitness(individual)
-        parents.append((fit_individual, individual))
+        textTerminal[len(textTerminal)-1] += " ( x: {}, score: {} )".format(fit_individual[1], fit_individual[0])
+        parents.append((fit_individual[0], individual, fit_individual[1]))
 
     #if random.uniform(0, 1) > 0.85:
      #   mutated = random.randint(0, parents_length-1)
@@ -208,6 +223,7 @@ def evolve(population, retain_lenght=0.4, random_select=0.1, max_pop=50, number_
     # Calcula a quantidade de crossover necessaria para manter a taxa com max_pop
     
     # Add children, which are bred from two remaining networks.
+    count = 0
     while len(children) < desired_length:
         # Get a random mom and dad.
         male = random.randint(0, parents_length-1)
@@ -226,13 +242,22 @@ def evolve(population, retain_lenght=0.4, random_select=0.1, max_pop=50, number_
             male.set_weights(mutate(new_weights1[1], x_male))
                 
             if len(children) < desired_length:
+                textTerminal.append("Child " + str(count) + " Male")
                 fit_male, x_male = fitness(male)
+                textTerminal[len(textTerminal)-1] += " ( x: {}, score: {} )".format(x_male, fit_male)
+
+                textTerminal.append("Child " + str(count) + " Female")
                 fit_female, x_female = fitness(female)
+                textTerminal[len(textTerminal)-1] += " ( x: {}, score: {} )".format(x_female, fit_female)
+
                 if fit_male > fit_female:
                     children.append((fit_male, male, x_male))
                 else:
                     children.append((fit_female, female, x_female))
-                    
+                count+=1
+
+    printInfos(textTerminal)
+
     parents.extend(children)
 
     return parents
@@ -253,14 +278,15 @@ def mutate(weights, x):
 def generations(pop, n_gen=10):
     initial_population = pop
     for i in range(n_gen):
-        print("Generation "+str(i))
-        new_pop = evolve(initial_population, random_select=0.01, number_gen = i, max_pop=10)
+        textTerminal.append("Generation {} of {}".format(i, n_gen-1))
+        new_pop = evolve(initial_population, random_select=0.5, number_gen = i, max_pop=10)
         initial_population = new_pop
+        textTerminal.clear()
     return new_pop
 
 def main():
-    initial_population = population(100, state_size, action_size)
-    evolved = generations(initial_population, 1000)
+    initial_population = population(10, state_size, action_size)
+    generations(initial_population, 1000)
 
 if __name__ == "__main__":
     main()

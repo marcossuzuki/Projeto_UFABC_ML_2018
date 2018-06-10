@@ -5,7 +5,6 @@
 # utility functions for the Q-Learning agent
 
 import sys
-import pickle
 import os
 from rle_python_interface.rle_python_interface import RLEInterface
 import numpy as np
@@ -39,32 +38,6 @@ def performAction(a, rle):
   else:
     reward += rle.act(a)
   return reward
-
-# Retorna a melhor ação do estado atual pela matriz Q  
-def getBestActionDet(Q, state):
-  # recupera o valor de Q para todas as ações
-  qvals = np.array([Q.get(f'{state},{ai}',(0.0,0)) [0]
-                     for ai in actions_list])
-
-  # Se empatar, sorteia entre eles                     
-  maxval = np.max(qvals)
-  if (qvals == maxval).sum() > 1:
-    idx = choice(np.nonzero(qvals==maxval)[0])
-  else:
-    idx = np.argmax(qvals)
-  return idx
-
-def getNewActionDet(Q, state):
-  # recupera o valor de Q para todas as ações
-  qvals = np.array([Q.get(f'{state},{ai}',(0.0,0))[1] 
-                     for ai in actions_list])
-
-  # Se empatar, sorteia entre eles       
-  if (np.abs(qvals)<=20).sum() > 0:
-    idx = choice(np.nonzero(np.abs(qvals)<=20)[0])
-  else:
-    idx = choice(np.nonzero(qvals)[0])
-  return idx
   
 def loadInterface(display=False):
   rle = RLEInterface()
@@ -78,10 +51,3 @@ def loadInterface(display=False):
 
   rle.loadROM('super_mario_world.smc', 'snes')
   return rle
-
-  
-def getStoredQ(fname='Q.pkl'):
-  Q, ep, maxActions = {}, 0, 0
-  if os.path.exists(fname):
-    Q, ep, maxActions = pickle.load(open(fname, 'rb'))
-  return Q, ep, maxActions 
