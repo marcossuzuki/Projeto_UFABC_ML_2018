@@ -81,7 +81,7 @@ class NeuralNetwork:
     def save(self, name):
         self.model.save_weights(name)
 
-rle = rle = RLEInterface()
+rle = RLEInterface()
 rle.setInt(b'random_seed', 12)
 rle.setBool(b'sound', False)
 rle.setBool(b'display_screen', True)
@@ -202,17 +202,17 @@ def evolve(population, retain_lenght=0.4, random_select=0.1, max_pop=50, number_
     for i in (range(len(parents))):
         textTerminal.append("Parent {} ( x: {}, score: {})".format(i, parents[i][2], parents[i][0]))
 
-    parents_length = len(parents)
-    desired_length = max_pop - parents_length
-    children = [] 
-
     # Mantem alguns dos individuos de forma aleatoria
     if random_select > random.random():
         individual = NeuralNetwork(state_size, action_size)
-        textTerminal.append("Random individual")
+        textTerminal.append("Parent Random")
         fit_individual = fitness(individual)
         textTerminal[len(textTerminal)-1] += " ( x: {}, score: {} )".format(fit_individual[1], fit_individual[0])
         parents.append((fit_individual[0], individual, fit_individual[1]))
+
+    parents_length = len(parents)
+    desired_length = max_pop - parents_length
+    children = [] 
 
     #if random.uniform(0, 1) > 0.85:
      #   mutated = random.randint(0, parents_length-1)
@@ -285,7 +285,7 @@ def generations(pop, n_gen=10):
     return new_pop
 
 def main():
-    initial_population = population(10, state_size, action_size)
+    initial_population = population(100, state_size, action_size)
     generations(initial_population, 1000)
 
 if __name__ == "__main__":
